@@ -7,33 +7,33 @@ namespace NitoriService
         public Form1()
         {
             InitializeComponent();
-            NitoriServiceContext db = new NitoriServiceContext();
-            var shops = (
-                from s in db.Shops
-                select s.Name
-                ).Distinct().ToList();
-            comboBox1.DataSource = shops;
+            using (NitoriServiceContext db = new NitoriServiceContext())
+            {
+                var shops = db.Shops.Select(x => x.Name).Distinct().ToList();
+                comboBox1.DataSource = shops;
+            }
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            NitoriServiceContext db = new NitoriServiceContext();
-            var orders = (
-            from o in db.Orders
-            join m in db.Masters on o.MasterId equals m.Id
-            where o.Completed == null || o.Completed == false
-            join s in db.Shops on o.ShopId equals s.Id
-            where s.Name == comboBox1.SelectedValue
-            select new
+            using (NitoriServiceContext db = new NitoriServiceContext())
             {
-                ID = m.Id,
-                FirstName = m.FirstName,
-                Name = m.Name,
-                SecondName = m.SecondName,
-                Order = o.Date,
-                Completed = o.Completed
-            }).ToList();
-            dataGridView1.DataSource = orders;
+                var orders = (
+                from o in db.Orders
+                join m in db.Masters on o.MasterId equals m.Id
+                join s in db.Shops on o.ShopId equals s.Id
+                where s.Name == comboBox1.SelectedValue &&
+                (o.Completed == null || o.Completed == false) 
+                select new
+                {
+                    Имя = m.FirstName,
+                    Фамилия = m.Name,
+                    Магазин = s.Name,
+                    Дата = o.Date,
+                    Статус = "Не выполнено"
+                }).ToList();
+                dataGridView1.DataSource = orders;
+            }
         }
     }
 }
